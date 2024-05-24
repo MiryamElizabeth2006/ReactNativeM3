@@ -8,6 +8,9 @@ import {
   Button,
   Alert,
   ScrollView,
+  Modal,
+  TouchableOpacity,
+  Pressable,
 } from "react-native";
 import { useState } from "react";
 
@@ -59,45 +62,45 @@ export default function App() {
   const [txtPrecioCompra, setTxtPrecioCompra] = useState();
   const [txtPrecioVenta, setTxtPrecioVenta] = useState();
   const [numProductos, setNumProductos] = useState(productos.length);
+  const [modalVisible, setModalVisible] = useState(false);
 
-  let ItemProductos = (props) => {
+  let ItemProductos = ({ item, index }) => {
     return (
       <View style={styles.itemProductos}>
         <View style={styles.itemIndice}>
-          <Text>{props.producto.id}</Text>
+          <Text>{item.id}</Text>
         </View>
         <View style={styles.itemContenido}>
-          <Text style={styles.textoPrincipal}>{props.producto.nombre}</Text>
-          <Text style={styles.textoSecundario}>{props.producto.categoria}</Text>
+          <Text style={styles.textoPrincipal}>{item.nombre}</Text>
+          <Text style={styles.textoSecundario}>{item.categoria}</Text>
         </View>
         <View style={styles.itemPrecio}>
-          <Text style={styles.textoPrecio}>{props.producto.precioVenta.toFixed(2)}</Text>
+          <Text style={styles.textoPrecio}>{item.precioVenta.toFixed(2)}</Text>
         </View>
         <View style={styles.itemBotones}>
-          <Button
-            title="E"
-            color="green"
+          <TouchableOpacity
+            style={styles.editar}
             onPress={() => {
-              setTxtCodigo(props.producto.id.toString());
-              setTxtNombre(props.producto.nombre);
-              setTxtCategoria(props.producto.categoria);
-              setTxtPrecioCompra(props.producto.precioCompra.toString());
-              setTxtPrecioVenta(props.producto.precioVenta.toString());
+              setTxtCodigo(item.id.toString());
+              setTxtNombre(item.nombre);
+              setTxtCategoria(item.categoria);
+              setTxtPrecioCompra(item.precioCompra.toString());
+              setTxtPrecioVenta(item.precioVenta.toString());
               esNuevo = false;
-              indiceSelecionado = props.indice;
+              indiceSelecionado = index;
             }}
-          />
-          <View style={styles.buttonSpacing} />
-          <Button
-            title="X"
-            color="red"
+          >
+            <Text> E </Text>
+          </TouchableOpacity>
+          <Pressable
+            style={styles.eliminar}
             onPress={() => {
-              indiceSelecionado = props.indice;
-              productos.splice(indiceSelecionado, 1);
-              setNumProductos(productos.length);
-              limpiarProductos();
+              setModalVisible(true);
+              indiceSelecionado = index;
             }}
-          />
+          >
+            <Text> X </Text>
+          </Pressable>
         </View>
       </View>
     );
@@ -113,12 +116,7 @@ export default function App() {
   };
 
   let existeProductos = () => {
-    for (let i = 0; i < productos.length; i++) {
-      if (productos[i].id == txtCodigo) {
-        return true;
-      }
-    }
-    return false;
+    return productos.some((producto) => producto.id == txtCodigo);
   };
 
   let guardarProductos = () => {
@@ -162,7 +160,10 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+      >
         <View style={styles.areaCabecera}>
           <Text style={styles.textProductos}>PRODUCTOS</Text>
 
@@ -233,9 +234,9 @@ export default function App() {
       <FlatList
         style={styles.lista}
         data={productos}
-        renderItem={(elemento) => {
-          return <ItemProductos producto={elemento.item} indice={elemento.index} />;
-        }}
+        renderItem={({ item, index }) => (
+          <ItemProductos item={item} index={index} />
+        )}
         keyExtractor={(item) => item.id.toString()}
       />
       <StatusBar style="auto" />
@@ -243,6 +244,39 @@ export default function App() {
       <View style={styles.areaPie}>
         <Text>Autor: Elizabeth Nono</Text>
       </View>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          Alert.alert("Modal has been closed.");
+          setModalVisible(!modalVisible);
+        }}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <Text>Está seguro que quiere eliminar</Text>
+            <View>
+              <Button
+              style={styles.aceptar}
+                color="red"
+                title=" Aceptar "
+                onPress={() => {
+                  productos.splice(indiceSelecionado, 1);
+                  setNumProductos(productos.length);
+                  limpiarProductos();
+                  setModalVisible(!modalVisible);
+                }}
+              />
+              <Button
+                style={styles.buttonClose}
+                title=" Cancelar "
+                onPress={() => setModalVisible(!modalVisible)}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -250,7 +284,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: "#fff",
     flexDirection: "column",
     justifyContent: "flex-start",
     alignItems: "stretch",
@@ -338,4 +372,43 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 10,
   },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 22,
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 40,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  editar: {
+    backgroundColor: "green",
+    padding: 5,
+    borderRadius: 5,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 5
+  },
+  eliminar: {
+    backgroundColor: "red",
+    padding: 5,
+    borderRadius: 5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  aceptar: {
+    margin: 5
+  }
 });
